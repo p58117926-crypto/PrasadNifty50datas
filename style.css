@@ -1,0 +1,76 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  background: #f9f9f9;
+}
+h2,
+h3 {
+  text-align: center;
+}
+.summary {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.summary div {
+  background: #fff;
+  padding: 10px;
+  margin: 5px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  min-width: 100px;
+  text-align: center;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th,
+td {
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+}
+th {
+  background-color: #004080;
+  color: white;
+  position: sticky;
+  top: 0;
+}
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+.up,
+.green {
+  color: green;
+  font-weight: bold;
+}
+.down,
+.red {
+  color: red;
+  font-weight: bold;
+}
+.flat,
+.yellow {
+  color: orange;
+  font-weight: bold;
+}
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #ccc;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.bar-fill {
+  height: 100%;
+}
+@media (max-width: 768px) {
+  table,
+  th,
+  td {
+    font-size: 10px;
+  }
+}

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Untitled</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nifty 50 Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      background: #f9f9f9;
+    }
+
+    h2,
+    h3 {
+      text-align: center;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .summary div {
+      background: #fff;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      min-width: 100px;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    th {
+      background-color: #004080;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .up {
+      color: green;
+      font-weight: bold;
+    }
+
+    .down {
+      color: red;
+      font-weight: bold;
+    }
+
+    .flat {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .green {
+      color: green;
+      font-weight: bold;
+    }
+
+    .red {
+      color: red;
+      font-weight: bold;
+    }
+
+    .yellow {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .bar {
+      height: 6px;
+      border-radius: 3px;
+      background: #ccc;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .bar-fill {
+      height: 100%;
+    }
+
+    @media (max-width: 768px) {
+
+      table,
+      th,
+      td {
+        font-size: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Nifty 50 Market Dashboard</h2>
+  <div class="summary" id="summary"></div>
+  <table id="niftyTable">
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th>Live Price</th>
+        <th>Prev Close</th>
+        <th>Change</th>
+        <th>% Change</th>
+        <th>Status</th>
+        <th>Opening Price</th>
+        <th>Volume</th>
+        <th>Gap</th>
+        <th>Range</th>
+        <th>Visual</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script>
+    const tableBody = document.getElementById('tableBody');
+    const summaryDiv = document.getElementById("summary");
+    let up = 0,
+      down = 0,
+      flat = 0;
+    let gapUp = 0,
+      gapDown = 0,
+      gapFlat = 0;
+    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRoHEhvPDoJXVQnlNst63T0ETFWRJnAHzDTvWCocsa-rl52JYrXx6_KMDq7T0_7yz4_donHylNL_u2r/pub?output=csv')
+      .then(response => response.text())
+      .then(csv => {
+        const rows = csv.trim().split('\n').slice(1);
+        rows.forEach(row => {
+          const cols = row.split(',');
+          const name = cols[0];
+          const live = parseFloat(cols[2]);
+          const prevClose = parseFloat(cols[3]);
+          const change = parseFloat(cols[4]);
+          const open = parseFloat(cols[5]);
+          const volume = parseInt(cols[6]);
+          const range = parseFloat(cols[8]);
+          const pct = +((change / prevClose) * 100).toFixed(2);
+          let status = 'flat';
+          if (change > 1) {
+            status = 'up';
+            up++;
+          } else if (change < -1) {
+            status = 'down';
+            down++;
+          } else {
+            flat++;
+          }
+          let gap = +(open - prevClose).toFixed(2);
+          let gapText = 'FLAT';
+          let gapClass = 'yellow';
+          if (gap > 1) {
+            gapText = 'GAP UP';
+            gapClass = 'green';
+            gapUp++;
+          } else if (gap < -1) {
+            gapText = 'GAP DOWN';
+            gapClass = 'red';
+            gapDown++;
+          } else {
+            gapFlat++;
+          }
+          const liveClass = live > open ? 'green' : 'red';
+          const openClass = open > prevClose ? 'green' : 'red';
+          const changeClass = change > 1 ? 'green' : change < -1 ? 'red' : 'yellow';
+          const pctClass = pct > 1 ? 'green' : pct < -1 ? 'red' : 'yellow';
+          const row = `<tr>
+            <td>${name}</td>
+            <td class="${liveClass}">${live}</td>
+            <td>${prevClose}</td>
+            <td class="${changeClass}">${change}</td>
+            <td class="${pctClass}">${pct}%</td>
+            <td class="${status}">${status.toUpperCase()}</td>
+            <td class="${openClass}">${open}</td>
+            <td>${volume.toLocaleString()}</td>
+            <td class="${gapClass}">${gapText}</td>
+            <td>${range}</td>
+            <td><div class="bar"><div class="bar-fill" style="width:${Math.min(Math.abs(pct), 100)}%; background:${status==='up'?'green':status==='down'?'red':'orange'}"></div></div></td>
+          </tr>`;
+          tableBody.innerHTML += row;
+        });
+        const total = up + down + flat;
+        summaryDiv.innerHTML = `
+          <div><b>Total</b><br>${total}</div>
+          <div><b>Up</b><br>${up} (${((up/total)*100).toFixed(1)}%)</div>
+          <div><b>Down</b><br>${down} (${((down/total)*100).toFixed(1)}%)</div>
+          <div><b>Flat</b><br>${flat} (${((flat/total)*100).toFixed(1)}%)</div>
+          <div><b>GAP UP</b><br>${gapUp}</div>
+          <div><b>GAP DOWN</b><br>${gapDown}</div>
+          <div><b>GAP FLAT</b><br>${gapFlat}</div>
+          <div><b>Date</b><br>${new Date().toLocaleDateString()}</div>`;
+      });
+  </script>
+</body>
+
+</html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nifty 50 Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      background: #f9f9f9;
+    }
+
+    h2,
+    h3 {
+      text-align: center;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .summary div {
+      background: #fff;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      min-width: 100px;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    th {
+      background-color: #004080;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .up {
+      color: green;
+      font-weight: bold;
+    }
+
+    .down {
+      color: red;
+      font-weight: bold;
+    }
+
+    .flat {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .green {
+      color: green;
+      font-weight: bold;
+    }
+
+    .red {
+      color: red;
+      font-weight: bold;
+    }
+
+    .yellow {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .bar {
+      height: 6px;
+      border-radius: 3px;
+      background: #ccc;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .bar-fill {
+      height: 100%;
+    }
+
+    @media (max-width: 768px) {
+
+      table,
+      th,
+      td {
+        font-size: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Nifty 50 Market Dashboard</h2>
+  <div class="summary" id="summary"></div>
+  <table id="niftyTable">
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th>Live Price</th>
+        <th>Prev Close</th>
+        <th>Change</th>
+        <th>% Change</th>
+        <th>Status</th>
+        <th>Opening Price</th>
+        <th>Volume</th>
+        <th>Gap</th>
+        <th>Range</th>
+        <th>Visual</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script>
+    const companies = ["RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "INFY", "LT", "HINDUNILVR", "KOTAKBANK", "ITC", "SBIN", "AXISBANK", "BAJFINANCE", "BHARTIARTL", "ASIANPAINT", "MARUTI", "SUNPHARMA", "HCLTECH", "WIPRO", "TECHM", "TITAN", "ULTRACEMCO", "NTPC", "POWERGRID", "NESTLEIND", "JSWSTEEL", "GRASIM", "ADANIENT", "ADANIPORTS", "COALINDIA", "HINDALCO", "ONGC", "BPCL", "TATAMOTORS", "TATASTEEL", "EICHERMOT", "CIPLA", "BRITANNIA", "BAJAJFINSV", "DIVISLAB", "DRREDDY", "HEROMOTOCO", "M&M", "BAJAJ-AUTO", "SBILIFE", "SHREECEM", "HDFCLIFE", "ICICIPRULI", "INDUSINDBK", "UPL"];
+    const tableBody = document.getElementById('tableBody');
+    let up = 0,
+      down = 0,
+      flat = 0;
+    let gapUp = 0,
+      gapDown = 0,
+      gapFlat = 0;
+    companies.forEach(name => {
+      const prevClose = +(Math.random() * 1000 + 1000).toFixed(2);
+      const live = +(prevClose + (Math.random() - 0.5) * 40).toFixed(2);
+      const open = +(prevClose + (Math.random() - 0.5) * 20).toFixed(2);
+      const volume = Math.floor(Math.random() * 1000000);
+      const change = +(live - prevClose).toFixed(2);
+      const pct = +((change / prevClose) * 100).toFixed(2);
+      const gap = +(open - prevClose).toFixed(2);
+      const range = +(Math.random() * 100).toFixed(2);
+      let status = 'flat';
+      if (change > 1) {
+        status = 'up';
+        up++;
+      } else if (change < -1) {
+        status = 'down';
+        down++;
+      } else {
+        flat++;
+      }
+      let gapText = 'FLAT';
+      let gapClass = 'yellow';
+      if (gap > 1) {
+        gapText = 'GAP UP';
+        gapClass = 'green';
+        gapUp++;
+      } else if (gap < -1) {
+        gapText = 'GAP DOWN';
+        gapClass = 'red';
+        gapDown++;
+      } else {
+        gapFlat++;
+      }
+      const liveClass = live > open ? 'green' : 'red';
+      const openClass = open > prevClose ? 'green' : 'red';
+      const changeClass = change > 1 ? 'green' : change < -1 ? 'red' : 'yellow';
+      const pctClass = pct > 1 ? 'green' : pct < -1 ? 'red' : 'yellow';
+      const row = `<tr>
+        <td>${name}</td>
+        <td class="${liveClass}">${live}</td>
+        <td>${prevClose}</td>
+        <td class="${changeClass}">${change}</td>
+        <td class="${pctClass}">${pct}%</td>
+        <td class="${status}">${status.toUpperCase()}</td>
+        <td class="${openClass}">${open}</td>
+        <td>${volume.toLocaleString()}</td>
+        <td class="${gapClass}">${gapText}</td>
+        <td>${range}</td>
+        <td><div class="bar"><div class="bar-fill" style="width:${Math.min(Math.abs(pct), 100)}%; background:${status==='up'?'green':status==='down'?'red':'orange'}"></div></div></td>
+      </tr>`;
+      tableBody.innerHTML += row;
+    });
+    const summaryDiv = document.getElementById("summary");
+    const total = companies.length;
+    summaryDiv.innerHTML = `
+      <div><b>Total</b><br>${total}</div>
+      <div><b>Up</b><br>${up} (${((up/total)*100).toFixed(1)}%)</div>
+      <div><b>Down</b><br>${down} (${((down/total)*100).toFixed(1)}%)</div>
+      <div><b>Flat</b><br>${flat} (${((flat/total)*100).toFixed(1)}%)</div>
+      <div><b>GAP UP</b><br>${gapUp}</div>
+      <div><b>GAP DOWN</b><br>${gapDown}</div>
+      <div><b>GAP FLAT</b><br>${gapFlat}</div>
+      <div><b>Date</b><br>${new Date().toLocaleDateString()}</div>`;
+  </script>
+</body>
+
+</html>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>
